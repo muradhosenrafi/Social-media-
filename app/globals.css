@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+
+  /* Maroon + Black */
+  --color-ink: #140808;
+  --color-surface: #ffffff;
+  --color-muted: #dedede;
+  --color-maroon-50: #faf1f1;
+  --color-maroon-100: #f1dede;
+  --color-maroon-200: #e3bfbf;
+  --color-maroon-500: #8b4444;
+  --color-maroon-700: #6b1e24;
+  --color-maroon-900: #2d0a0c;
+}
+
+/* ডার্ক থিম (প্রোফাইল মেনুর থিম বাটন থেকে চালু হয়) */
+:root[data-theme="dark"] {
+  --color-ink: #f4e9e9;
+  --color-surface: #130a0b;
+  --color-muted: #2a1a1c;
+  --color-maroon-50: #241315;
+  --color-maroon-100: #321a1d;
+  --color-maroon-200: #4a262a;
+  --color-maroon-700: #c2414d;
+}
+
+body {
+  @apply bg-gray-100 text-gray-900 antialiased;
+}
+
+/* সতর্কবার্তা: নিজে নিজে স্লাইড হবে, মাউস রাখলে থামবে */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 45s linear infinite;
+}
+
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+  .marquee {
+    overflow-x: auto;
+  }
+}
