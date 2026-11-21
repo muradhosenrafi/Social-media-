@@ -165,6 +165,14 @@ export const CardIcon = (p) => (
   </svg>
 );
 
+export const CardStackIcon = (p) => (
+  <svg {...base} {...p} viewBox="0 0 32 32">
+    <rect x="8" y="3.5" width="20" height="16" rx="3" transform="rotate(12 18 11.5)" />
+    <rect x="3.5" y="11" width="21" height="16" rx="3" />
+    <path d="M3.5 16h21M7 22h6" />
+  </svg>
+);
+
 export const DocIcon = (p) => (
   <svg {...base} {...p}>
     <path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />

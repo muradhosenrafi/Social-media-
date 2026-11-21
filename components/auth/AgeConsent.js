@@ -17,7 +17,7 @@ export default function AgeConsent({ onAccept }) {
         Are you 18 or older?
       </h2>
       <p className="mt-3 text-[17px] text-[#5b5078]">
-        DateFlow is only for adults. Confirm your age to continue.
+        DateNexa is only for adults. Confirm your age to continue.
       </p>
 
       <label

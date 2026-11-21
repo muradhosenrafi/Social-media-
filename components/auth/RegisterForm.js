@@ -177,7 +177,7 @@ export default function RegisterForm() {
       <h2 className="text-center text-3xl font-bold tracking-tight text-[#1b1035] sm:text-[34px]">
         Create Your Account
       </h2>
-      <p className="mt-2 text-center text-[17px] text-[#5b5078]">Join DateFlow and start your journey</p>
+      <p className="mt-2 text-center text-[17px] text-[#5b5078]">Join DateNexa and start your journey</p>
 
       <div className="mt-10 space-y-4">
         <div>

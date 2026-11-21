@@ -3,7 +3,7 @@ import Avatar from "@/components/ui/Avatar";
 import { chatContacts } from "@/lib/mock-data";
 
 export const metadata = {
-  title: "Messages · DateFlow",
+  title: "Messages · DateNexa",
 };
 
 export default function MessagesPage() {

@@ -26,14 +26,12 @@ export default function PostCard({ post }) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg bg-[#d9d9d9]">
-        {post.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {post.image && (
+        <div className="overflow-hidden rounded-lg bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={post.image} alt="" className="aspect-[2/1] w-full object-cover" />
-        ) : (
-          <div className="aspect-[2/1]" />
-        )}
-      </div>
+        </div>
+      )}
 
       <PostActions post={post} />
     </article>

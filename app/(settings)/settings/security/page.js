@@ -1,7 +1,7 @@
 import PageHeading from "@/components/settings/PageHeading";
 import SecurityPanel from "@/components/settings/SecurityPanel";
 
-export const metadata = { title: "Login and security | DateFlow" };
+export const metadata = { title: "Login and security | DateNexa" };
 
 export default function SecurityPage() {
   return (

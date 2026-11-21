@@ -9,7 +9,7 @@ import { currentUser, getProfile, posts } from "@/lib/mock-data";
 export async function generateMetadata({ params }) {
   const { username } = await params;
   const profile = getProfile(username);
-  return { title: profile ? `${profile.name} · DateFlow` : "Profile · DateFlow" };
+  return { title: profile ? `${profile.name} · DateNexa` : "Profile · DateNexa" };
 }
 
 export default async function ProfilePage({ params }) {

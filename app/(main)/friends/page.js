@@ -3,7 +3,7 @@ import PersonRow from "@/components/sidebar/PersonRow";
 import { people } from "@/lib/mock-data";
 
 export const metadata = {
-  title: "Friend Requests · DateFlow",
+  title: "Friend Requests · DateNexa",
 };
 
 export default function FriendRequestsPage() {

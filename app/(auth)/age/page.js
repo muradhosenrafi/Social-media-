@@ -3,7 +3,7 @@ import AuthHero from "@/components/auth/AuthHero";
 import { confirmAge } from "./actions";
 
 export const metadata = {
-  title: "Confirm your age · DateFlow",
+  title: "Confirm your age · DateNexa",
 };
 
 export default function AgePage() {

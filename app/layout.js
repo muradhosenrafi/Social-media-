@@ -8,11 +8,10 @@ const hind = Hind_Siliguri({
 });
 
 export const metadata = {
-  title: "DateFlow",
-  description: "DateFlow",
+  title: "DateNexa",
+  description: "DateNexa",
 };
 
-// পেজ আঁকার আগেই সেভ করা থিম বসায়, তাই ডার্ক থিমে সাদা ঝলক আসে না
 const themeScript = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 export default function RootLayout({ children }) {

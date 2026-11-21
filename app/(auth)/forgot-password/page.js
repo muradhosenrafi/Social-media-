@@ -2,7 +2,7 @@ import AuthHero from "@/components/auth/AuthHero";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 
 export const metadata = {
-  title: "Forgot Password · DateFlow",
+  title: "Forgot Password · DateNexa",
 };
 
 export default function ForgotPasswordPage() {

@@ -77,21 +77,8 @@ export const StarIcon = ({ className = "", ...p }) => (
 );
 
 export const LogoMark = ({ className = "" }) => (
-  <svg viewBox="0 0 48 44" className={className} fill="none" aria-hidden>
-    <defs>
-      <linearGradient id="df-logo" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stopColor="#f0508a" />
-        <stop offset="1" stopColor="#c2185b" />
-      </linearGradient>
-    </defs>
-    <path
-      d="M24 40S5 29 5 15.5C5 9.5 9.4 5 15 5c3.8 0 7 2 9 5.5C26 7 29.200 5 33 5c5.600 0 10 4.500 10 10.500C43 29 24 40 24 40z"
-      stroke="url(#df-logo)"
-      strokeWidth="4.500"
-      strokeLinejoin="round"
-    />
-    <path d="M13 17c1-3 3.500-4.500 6-4.500" stroke="url(#df-logo)" strokeWidth="3" strokeLinecap="round" />
-  </svg>
+  // eslint-disable-next-line @next/next/no-img-element
+  <img src="/logo.png" alt="" aria-hidden="true" className={`rounded-lg object-contain ${className}`} />
 );
 
 export const LockIcon = (p) => (

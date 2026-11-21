@@ -4,7 +4,7 @@ import AuthHero from "@/components/auth/AuthHero";
 import RegisterForm from "@/components/auth/RegisterForm";
 
 export const metadata = {
-  title: "Create Your Account · DateFlow",
+  title: "Create Your Account · DateNexa",
 };
 
 export default async function RegisterPage() {

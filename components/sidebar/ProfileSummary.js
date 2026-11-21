@@ -17,7 +17,7 @@ export default function ProfileSummary({ user }) {
         </span>
       </Link>
 
-      <span className="ml-3 mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#dcdcdc] px-3 py-1 text-sm font-semibold">
+      <span className="ml-3 mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-semibold text-ink">
         <CoinIcon className="h-5 w-5" />
         {user.balance} ৳
       </span>

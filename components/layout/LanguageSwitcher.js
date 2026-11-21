@@ -7,10 +7,19 @@ import { ChevronDownIcon, GlobeIcon } from "@/components/ui/Icons";
 const languages = [
   { code: "bn", label: "বাংলা" },
   { code: "en", label: "English" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "ur", label: "اردو" },
+  { code: "ar", label: "العربية" },
+  { code: "es", label: "Español" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "pt", label: "Português" },
+  { code: "zh-CN", label: "简体中文" },
+  { code: "id", label: "Bahasa Indonesia" },
 ];
 
 export default function LanguageSwitcher() {
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, translationError, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -30,7 +39,10 @@ export default function LanguageSwitcher() {
     };
   }, [open]);
 
-  const current = languages.find((l) => l.code === lang) ?? languages[0];
+  const current = languages.find((l) => l.code === lang) ?? {
+    code: lang,
+    label: new Intl.DisplayNames([lang], { type: "language" }).of(lang) ?? lang.toUpperCase(),
+  };
 
   return (
     <div ref={ref} className="relative">
@@ -49,7 +61,7 @@ export default function LanguageSwitcher() {
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 z-50 mt-2 w-36 overflow-hidden rounded-xl bg-white py-1 text-ink shadow-lg ring-1 ring-black/10"
+          className="absolute right-0 z-50 mt-2 max-h-[min(70vh,28rem)] w-52 overflow-y-auto rounded-xl bg-surface py-1 text-ink shadow-lg ring-1 ring-ink/15"
         >
           {languages.map((l) => (
             <li key={l.code} role="option" aria-selected={l.code === lang}>
@@ -67,6 +79,11 @@ export default function LanguageSwitcher() {
               </button>
             </li>
           ))}
+          {translationError && (
+            <li className="border-t border-ink/10 px-3 py-2 text-xs text-amber-600">
+              {t("language.translationSetup")}
+            </li>
+          )}
         </ul>
       )}
     </div>

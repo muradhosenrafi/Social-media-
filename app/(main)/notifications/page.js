@@ -3,7 +3,7 @@ import Avatar from "@/components/ui/Avatar";
 import { people } from "@/lib/mock-data";
 
 export const metadata = {
-  title: "Notifications · DateFlow",
+  title: "Notifications · DateNexa",
 };
 
 export default function NotificationsPage() {

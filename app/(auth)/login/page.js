@@ -2,7 +2,7 @@ import AuthHero from "@/components/auth/AuthHero";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata = {
-  title: "Login · DateFlow",
+  title: "Login · DateNexa",
 };
 
 export default function LoginPage() {

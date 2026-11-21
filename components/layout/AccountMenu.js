@@ -69,7 +69,7 @@ export default function AccountMenu({ variant = "navbar" }) {
 
   const items = [
     { href: "/privacy", label: t("menu.privacy"), Icon: LockIcon, tone: "text-[#5b3df5]" },
-    { href: "/billing", label: t("menu.billing"), Icon: CardIcon, tone: "text-[#5b3df5]" },
+    { href: "/settings/payment", label: t("menu.billing"), Icon: CardIcon, tone: "text-[#5b3df5]" },
     { href: "/report-problem", label: t("menu.report"), Icon: DocIcon, tone: "text-ink" },
     { href: "/settings", label: t("menu.settings"), Icon: GearIcon, tone: "text-[#6b3fa0]" },
   ];

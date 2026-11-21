@@ -1,4 +1,5 @@
 import { ChatIcon, HeartIcon, LogoMark, StarIcon } from "./Icons";
+import Wordmark from "@/components/ui/Wordmark";
 
 const features = [
   { text: "Discover amazing people", Icon: HeartIcon, tone: "bg-[#ec407a]" },
@@ -10,12 +11,7 @@ export default function AuthHero() {
   return (
     <aside className="relative hidden overflow-hidden bg-linear-to-b from-[#ffe3ef] via-[#ffeef5] to-[#ffd3e6] md:block">
       <div className="relative z-10 px-10 pt-14 lg:px-14">
-        <div className="flex items-center gap-2">
-          <LogoMark className="h-10 w-11" />
-          <span className="text-[28px] font-bold tracking-tight text-[#1b1035]">
-            Date<span className="text-[#e91e63]">Flow</span>
-          </span>
-        </div>
+       <Wordmark forceLight priority className="h-14" />
 
         <h1 className="mt-14 text-[44px] font-bold leading-[1.1] tracking-tight text-[#1b1035] lg:text-5xl">
           Find Your
