@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { MailIcon } from "./Icons";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/+$/, "");
 const LENGTH = 6;
 const RESEND_SECONDS = 60;
+const OTP_VALID_SECONDS = 5 * 60;
 
-export default function OtpPanel({ contact, onBack, onVerified }) {
+export default function OtpPanel({ contact, channel = "email", onBack, onVerified }) {
   const [digits, setDigits] = useState(Array(LENGTH).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
+  const [expiresInSeconds, setExpiresInSeconds] = useState(OTP_VALID_SECONDS);
   const refs = useRef([]);
 
   useEffect(() => {
@@ -22,6 +25,12 @@ export default function OtpPanel({ contact, onBack, onVerified }) {
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [seconds]);
+
+  useEffect(() => {
+    if (expiresInSeconds <= 0) return;
+    const t = setTimeout(() => setExpiresInSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [expiresInSeconds]);
 
   const setAt = (i, v) =>
     setDigits((d) => {
@@ -60,31 +69,54 @@ export default function OtpPanel({ contact, onBack, onVerified }) {
       setError("Enter the 6-digit code.");
       return;
     }
+    if (expiresInSeconds <= 0) {
+      setError("That code has expired. Request a new one.");
+      return;
+    }
     setLoading(true);
     try {
-      // TODO: API call করে code verify করুন, যেমন:
-      // const res = await fetch("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ contact, code }) });
-      // if (!res.ok) throw new Error("Invalid code");
-      await new Promise((r) => setTimeout(r, 600));
+      const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [channel]: channel === "email" ? contact.toLowerCase() : contact.replace(/[\s()-]/g, ""), code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "That code is incorrect or expired. Try again.");
       onVerified?.();
-    } catch {
-      setError("That code is incorrect or expired. Try again.");
+    } catch (err) {
+      setError(err.message || `Could not connect to the DateNexa backend at ${API_URL}. Check that it is running.`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (seconds > 0) return;
-    // TODO: API call করে নতুন code পাঠান
-    setDigits(Array(LENGTH).fill(""));
+    setLoading(true);
     setError("");
-    setSeconds(RESEND_SECONDS);
-    refs.current[0]?.focus();
+    try {
+      const res = await fetch(`${API_URL}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [channel]: channel === "email" ? contact.toLowerCase() : contact.replace(/[\s()-]/g, "") }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Could not resend the code. Please try again.");
+      setDigits(Array(LENGTH).fill(""));
+      setSeconds(RESEND_SECONDS);
+      setExpiresInSeconds(OTP_VALID_SECONDS);
+      refs.current[0]?.focus();
+    } catch (err) {
+      setError(err.message || `Could not connect to the DateNexa backend at ${API_URL}. Check that it is running.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
+  const expiresMm = String(Math.floor(expiresInSeconds / 60)).padStart(2, "0");
+  const expiresSs = String(expiresInSeconds % 60).padStart(2, "0");
 
   return (
     <form onSubmit={handleVerify} className="mx-auto w-full max-w-md text-center" noValidate>
@@ -132,20 +164,21 @@ export default function OtpPanel({ contact, onBack, onVerified }) {
       </button>
 
       <p className="mt-6 text-[#5b5078]">
-        {seconds > 0 ? (
-          <>Resend code in {mm}:{ss}</>
-        ) : (
+        {expiresInSeconds > 0 ? <>Code expires in {expiresMm}:{expiresSs}. </> : <>Code expired. Go back and submit registration again. </>}
+        {expiresInSeconds > 0 && seconds > 0 ? (
+          <>Resend in {mm}:{ss}</>
+        ) : expiresInSeconds > 0 ? (
           <>
             Didn&apos;t get the code?{" "}
-            <button type="button" onClick={handleResend} className="font-semibold text-[#e91e63] hover:underline">
+            <button type="button" disabled={loading} onClick={handleResend} className="font-semibold text-[#e91e63] hover:underline disabled:opacity-60">
               Resend
             </button>
           </>
-        )}
+        ) : null}
       </p>
 
       <button type="button" onClick={onBack} className="mt-3 text-sm text-[#6b5b95] hover:underline">
-        Change email or number
+        Change email or phone number
       </button>
     </form>
   );

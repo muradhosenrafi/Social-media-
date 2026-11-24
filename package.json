@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "next build --webpack",
     "start": "next start"
   },
   "dependencies": {

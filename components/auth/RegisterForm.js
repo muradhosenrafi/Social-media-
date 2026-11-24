@@ -18,6 +18,9 @@ import {
   UserIcon,
 } from "./Icons";
 
+// Set NEXT_PUBLIC_API_URL to the backend origin, for example http://localhost:5001.
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/+$/, "");
+
 const genders = [
   { value: "male", label: "Male", Icon: MaleIcon },
   { value: "female", label: "Female", Icon: FemaleIcon },
@@ -36,7 +39,6 @@ const YEARS = Array.from({ length: 100 }, (_, i) => THIS_YEAR - i);
 const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M}\s.'-]{0,29}$/u;
 // ইমেইল: example@mail.com
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-// ফোন: ১০-১৫ ডিজিট, শুরুতে + থাকতে পারে
 const PHONE_RE = /^\+?[0-9]{10,15}$/;
 // পাসওয়ার্ড: ৮-৬৪ অক্ষর, অন্তত ১টি অক্ষর আর ১টি সংখ্যা
 const PASSWORD_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
@@ -77,6 +79,7 @@ const yearOptions = YEARS.map((y) => ({ value: String(y), label: String(y) }));
 export default function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState("form"); // "form" | "otp"
+  const [contactMethod, setContactMethod] = useState("email");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -93,7 +96,12 @@ export default function RegisterForm() {
 
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
-    setErrors((er) => ({ ...er, [k]: undefined, ...(["day", "month", "year"].includes(k) ? { dob: undefined } : {}) }));
+    setErrors((er) => ({
+      ...er,
+      [k]: undefined,
+      form: undefined,
+      ...(["day", "month", "year"].includes(k) ? { dob: undefined } : {}),
+    }));
   };
 
   const validate = () => {
@@ -126,9 +134,10 @@ export default function RegisterForm() {
     }
 
     const c = form.contact.trim();
-    if (!c) er.contact = "Enter your email or phone number.";
-    else if (!EMAIL_RE.test(c) && !PHONE_RE.test(c.replace(/[\s-]/g, "")))
-      er.contact = "Enter a valid email or phone number.";
+    const phone = c.replace(/[\s()-]/g, "");
+    if (!c) er.contact = contactMethod === "email" ? "Enter your email address." : "Enter your phone number.";
+    else if (contactMethod === "email" && !EMAIL_RE.test(c)) er.contact = "Enter a valid email address.";
+    else if (contactMethod === "phone" && !PHONE_RE.test(phone)) er.contact = "Enter a valid phone number.";
     if (!form.password) er.password = "Enter a password.";
     else if (!PASSWORD_RE.test(form.password))
       er.password = "Use 8+ characters with at least 1 letter and 1 number.";
@@ -143,11 +152,34 @@ export default function RegisterForm() {
 
     setLoading(true);
     try {
-      // TODO: API call করে OTP পাঠান, যেমন:
-      // const dob = `${form.year}-${String(form.month).padStart(2, "0")}-${String(form.day).padStart(2, "0")}`;
-      // await fetch("/api/auth/register", { method: "POST", body: JSON.stringify({ ...form, dob }) });
-      await new Promise((r) => setTimeout(r, 500));
-      setStep("otp");
+      const dob = `${form.year}-${String(form.month).padStart(2, "0")}-${String(form.day).padStart(2, "0")}`;
+      const contact = form.contact.trim();
+      const contactValue = contactMethod === "email" ? contact.toLowerCase() : contact.replace(/[\s()-]/g, "");
+      const res = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${form.firstName.trim()} ${form.lastName.trim()}`,
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          gender: form.gender,
+          dob,
+          [contactMethod]: contactValue,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // backend theke asha error message dekhabe
+        setErrors({ form: data.message || "Registration failed. Please try again." });
+        return;
+      }
+
+      setStep("otp"); // success hole OTP screen e jabe
+    } catch (err) {
+      setErrors({ form: `Could not connect to the DateNexa backend at ${API_URL}. Start the backend and check its .env settings.` });
     } finally {
       setLoading(false);
     }
@@ -157,8 +189,9 @@ export default function RegisterForm() {
     return (
       <OtpPanel
         contact={form.contact.trim()}
+        channel={contactMethod}
         onBack={() => setStep("form")}
-        onVerified={() => router.push("/")}
+        onVerified={() => router.push("/login")}
       />
     );
   }
@@ -271,16 +304,33 @@ export default function RegisterForm() {
       </fieldset>
 
       <div className="mt-6">
-        <label htmlFor="contact" className={label}>
-          Email or Number
-        </label>
+        <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-[#f7f3fa] p-1">
+          {[{ value: "email", text: "Email" }, { value: "phone", text: "Phone number" }].map(({ value, text }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={contactMethod === value}
+              onClick={() => {
+                setContactMethod(value);
+                setForm((current) => ({ ...current, contact: "" }));
+                setErrors((current) => ({ ...current, contact: undefined, form: undefined }));
+              }}
+              className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffd3e6] ${contactMethod === value ? "bg-white text-[#e91e63] shadow-sm" : "text-[#6b5b95] hover:text-[#1b1035]"}`}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+        <label htmlFor="contact" className={label}>{contactMethod === "email" ? "Email address" : "Phone number"}</label>
         <div className={field}>
           <MailIcon className="h-6 w-6 shrink-0" />
           <input
             id="contact"
+            type={contactMethod === "email" ? "email" : "tel"}
+            inputMode={contactMethod === "email" ? "email" : "tel"}
             className={input}
-            placeholder="Enter your email or phone number"
-            autoComplete="email"
+            placeholder={contactMethod === "email" ? "Enter your email address" : "Enter your phone number, e.g. +8801XXXXXXXXX"}
+            autoComplete={contactMethod === "email" ? "email" : "tel"}
             value={form.contact}
             onChange={set("contact")}
             aria-invalid={!!errors.contact}
@@ -320,6 +370,15 @@ export default function RegisterForm() {
           <p className="mt-1.5 text-sm text-[#8a82a8]">8+ characters, with a letter and a number.</p>
         )}
       </div>
+
+      {errors.form && (
+        <p
+          role="alert"
+          className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+        >
+          {errors.form}
+        </p>
+      )}
 
       <button
         type="submit"
