@@ -7,5 +7,5 @@ export async function connectDatabase() {
 
   await mongoose.connect(uri);
   await User.init();
-  console.log("Connected to MongoDB.");
+  console.log(`Connected to MongoDB database "${mongoose.connection.name}" at ${mongoose.connection.host}.`);
 }

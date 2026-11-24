@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon --watch . --watch .env --ext js,mjs,cjs,json,env index.js",
+    "db:up": "docker compose up -d mongodb",
+    "db:stop": "docker compose stop mongodb"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

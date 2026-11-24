@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { createOtp, hashOtp, otpMatches } from "../utils/otp.js";
-import { sendPhoneVerificationCode, sendVerificationCode } from "../utils/emailSender.js";
+import { sendVerificationCode } from "../utils/emailSender.js";
+import { sendPhoneVerificationCode } from "../utils/phoneSender.js";
 
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PHONE_RE = /^\+?[1-9]\d{9,14}$/;
@@ -112,7 +113,7 @@ export async function register(req, res) {
       return res.status(409).json({ success: false, message: "An account with this contact already exists. Please log in." });
     }
     if (error.message.startsWith("Could not send the verification code")) {
-      if (user && !user.isVerified) await User.deleteOne({ _id: user._id }).catch(() => {});
+      // Keep the pending registration so the user can retry/resend the code.
       return res.status(502).json({ success: false, message: error.message });
     }
     throw error;
