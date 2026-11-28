@@ -82,7 +82,7 @@ export default function OtpPanel({ contact, channel = "email", onBack, onVerifie
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "That code is incorrect or expired. Try again.");
-      onVerified?.();
+      onVerified?.(data.user);
     } catch (err) {
       setError(err.message || `Could not connect to the DateNexa backend at ${API_URL}. Check that it is running.`);
     } finally {

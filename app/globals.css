@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
 
   /* লাইট থিম */
   --color-ink: #25053d;

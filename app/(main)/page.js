@@ -1,8 +1,8 @@
-import PostCard from "@/components/feed/PostCard";
+import FeedPosts from "@/components/feed/FeedPosts";
 import PostComposer from "@/components/feed/PostComposer";
 import StoriesRow from "@/components/feed/StoriesRow";
 import ListingPostLink from "@/components/feed/ListingPostLink";
-import { currentUser, posts, stories } from "@/lib/mock-data";
+import { currentUser, stories } from "@/lib/mock-data";
 
 export const metadata = {
   title: "Home · DateNexa",
@@ -15,9 +15,7 @@ export default function HomePage() {
         <PostComposer user={currentUser} />
         <ListingPostLink />
         <StoriesRow stories={stories} />
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        <FeedPosts />
       </div>
     </main>
   );

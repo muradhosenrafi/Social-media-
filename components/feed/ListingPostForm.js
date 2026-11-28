@@ -4,11 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { ImageIcon, VideoIcon, CloseIcon } from "@/components/ui/Icons";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
-const categories = ["dating", "carShow", "fitness"];
-
 export default function ListingPostForm() {
   const { t } = useLanguage();
-  const [category, setCategory] = useState("dating");
   const [audience, setAudience] = useState("public");
   const [submitted, setSubmitted] = useState(false);
   const [media, setMedia] = useState([]);
@@ -58,24 +55,7 @@ export default function ListingPostForm() {
       )}
 
       <form onSubmit={submit} className="space-y-5 rounded-2xl bg-surface p-5 shadow-sm sm:p-6">
-        <fieldset>
-          <legend className="mb-2 text-sm font-semibold">{t("listing.category")}</legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {categories.map((item) => (
-              <label key={item} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${category === item ? "border-maroon-700 bg-maroon-50 text-maroon-700" : "border-ink/15 hover:bg-muted"}`}>
-                <input
-                  type="radio"
-                  name="category"
-                  value={item}
-                  checked={category === item}
-                  onChange={() => setCategory(item)}
-                  className="accent-maroon-700"
-                />
-                {t(`listing.category.${item}`)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <p className="rounded-xl bg-maroon-50 px-4 py-3 text-sm font-semibold text-maroon-900">{t("listing.datingOnly")}</p>
 
         <label className="block text-sm font-semibold">
           {t("listing.headline")}

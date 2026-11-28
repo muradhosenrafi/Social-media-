@@ -5,9 +5,11 @@ import Avatar from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import PostActions from "./PostActions";
+import { currentUser } from "@/lib/mock-data";
+import { deletePost } from "@/lib/posts-store";
 
 export default function PostCard({ post }) {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   return (
     <article className="space-y-3">
@@ -21,7 +23,14 @@ export default function PostCard({ post }) {
             {post.user.name}
             {post.user.verified && <VerifiedBadge />}
           </Link>
-          <p className="text-sm font-semibold text-ink/80">{post.timeAgo[lang] ?? post.timeAgo.bn}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-semibold text-ink/80">{post.timeAgo[lang] ?? post.timeAgo.bn}</p>
+            {post.user.username === currentUser.username && (
+              <button type="button" onClick={() => deletePost(post.id)} className="text-xs font-semibold text-red-700 hover:underline">
+                {t("post.delete")}
+              </button>
+            )}
+          </div>
           <p className="mt-3 text-[15px] leading-relaxed">{post.text}</p>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <Link
-            href="/create-listing"
+            href="/dating"
             className="rounded-full bg-maroon-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-maroon-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-maroon-200"
           >
             {t("nav.dating")}

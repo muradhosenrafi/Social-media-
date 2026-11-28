@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { currentUser } from "@/lib/mock-data";
+import { savePersonalInfo } from "@/lib/personal-info";
+import { saveRegisteredProfile } from "@/lib/registered-profile";
+import { resetVerification } from "@/lib/verification";
 import OtpPanel from "./OtpPanel";
 import {
   ChevronDownIcon,
@@ -155,24 +159,60 @@ export default function RegisterForm() {
       const dob = `${form.year}-${String(form.month).padStart(2, "0")}-${String(form.day).padStart(2, "0")}`;
       const contact = form.contact.trim();
       const contactValue = contactMethod === "email" ? contact.toLowerCase() : contact.replace(/[\s()-]/g, "");
-      const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${form.firstName.trim()} ${form.lastName.trim()}`,
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          gender: form.gender,
-          dob,
-          [contactMethod]: contactValue,
-          password: form.password,
-        }),
-      });
+      const registration = {
+        name: `${form.firstName.trim()} ${form.lastName.trim()}`,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        gender: form.gender,
+        dob,
+        [contactMethod]: contactValue,
+        password: form.password,
+      };
+      const sendRegistration = async (locationData = {}) => {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...registration, ...locationData }),
+        });
+        return {
+          response,
+          data: await response.json().catch(() => ({})),
+        };
+      };
 
-      const data = await res.json().catch(() => ({}));
+      let { response: res, data } = await sendRegistration();
+
+      if (res.ok && data.requiresGps) {
+        const locationCoordinates = await new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve(null);
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            ({ coords }) =>
+              resolve({
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+              }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+          );
+        });
+
+        ({ response: res, data } = await sendRegistration(
+          locationCoordinates
+            ? { locationCoordinates }
+            : { gpsUnavailable: true }
+        ));
+      }
 
       if (!res.ok) {
         // backend theke asha error message dekhabe
+        setErrors({ form: data.message || "Registration failed. Please try again." });
+        return;
+      }
+      if (!data.success) {
         setErrors({ form: data.message || "Registration failed. Please try again." });
         return;
       }
@@ -186,12 +226,47 @@ export default function RegisterForm() {
   };
 
   if (step === "otp") {
+    const finishRegistration = (user = {}) => {
+      const fallbackDob = `${form.year}-${String(form.month).padStart(2, "0")}-${String(form.day).padStart(2, "0")}`;
+      const profile = {
+        id: user.id || "",
+        username: user.username || `${form.firstName} ${form.lastName}`,
+        firstName: user.firstName || form.firstName.trim(),
+        lastName: user.lastName || form.lastName.trim(),
+        gender: user.gender || form.gender,
+        dob: user.dob || fallbackDob,
+        email: user.email || (contactMethod === "email" ? form.contact.trim().toLowerCase() : ""),
+        phone: user.phone || (contactMethod === "phone" ? form.contact.replace(/[\s()-]/g, "") : ""),
+        avatar: user.avatar || null,
+        location: user.location || null,
+      };
+      const dob = new Date(profile.dob);
+      const validDob = !Number.isNaN(dob.getTime());
+
+      try {
+        localStorage.setItem("dateNexa:userId", profile.id);
+        localStorage.setItem("dateNexa:userName", profile.username);
+        localStorage.setItem("dateNexa:userLocation", JSON.stringify(profile.location));
+      } catch {}
+      saveRegisteredProfile(profile);
+      savePersonalInfo({
+        first: profile.firstName,
+        last: profile.lastName,
+        day: validDob ? String(dob.getUTCDate()) : "",
+        month: validDob ? String(dob.getUTCMonth() + 1) : "",
+        year: validDob ? String(dob.getUTCFullYear()) : "",
+        gender: profile.gender,
+      });
+      resetVerification();
+      router.push(`/profile/${currentUser.username}`);
+    };
+
     return (
       <OtpPanel
         contact={form.contact.trim()}
         channel={contactMethod}
         onBack={() => setStep("form")}
-        onVerified={() => router.push("/login")}
+        onVerified={finishRegistration}
       />
     );
   }

@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
-import PostCard from "@/components/feed/PostCard";
-import EmptyState from "@/components/profile/EmptyState";
+import ProfilePosts from "@/components/profile/ProfilePosts";
 import ProfileComposer from "@/components/profile/ProfileComposer";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
-import { currentUser, getProfile, posts } from "@/lib/mock-data";
+import { currentUser, getProfile } from "@/lib/mock-data";
 
 export async function generateMetadata({ params }) {
   const { username } = await params;
@@ -18,7 +17,6 @@ export default async function ProfilePage({ params }) {
   if (!profile) notFound();
 
   const isOwner = profile.username === currentUser.username;
-  const userPosts = posts.filter((p) => p.user.username === profile.username);
 
   return (
     <div className="space-y-6">
@@ -26,13 +24,7 @@ export default async function ProfilePage({ params }) {
       <ProfileTabs profile={profile} />
       {isOwner && <ProfileComposer user={currentUser} />}
 
-      <section aria-label="Posts" className="space-y-6">
-        {userPosts.length > 0 ? (
-          userPosts.map((post) => <PostCard key={post.id} post={post} />)
-        ) : (
-          <EmptyState messageKey="profile.noPosts" />
-        )}
-      </section>
+      <ProfilePosts username={profile.username} />
     </div>
   );
 }

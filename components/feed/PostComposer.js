@@ -4,9 +4,19 @@ import { useRef, useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 import { CloseIcon, ImageIcon } from "@/components/ui/Icons";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { addPost } from "@/lib/posts-store";
+import { useRegisteredProfile } from "@/lib/registered-profile";
 
 export default function PostComposer({ user }) {
   const { t } = useLanguage();
+  const registeredProfile = useRegisteredProfile();
+  const displayUser = registeredProfile
+    ? {
+        ...user,
+        name: `${registeredProfile.firstName || ""} ${registeredProfile.lastName || ""}`.trim() || user.name,
+        avatar: registeredProfile.avatar || registeredProfile.profileImage || user.avatar,
+      }
+    : user;
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -24,17 +34,34 @@ export default function PostComposer({ user }) {
     if (fileInput.current) fileInput.current.value = "";
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!text.trim() && !file) return;
-    // TODO: API call করে পোস্ট সেভ করুন
+    let image = null;
+    if (file && file.type.startsWith("image/")) {
+      image = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    }
+    addPost({
+      id: `post-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      user: { name: displayUser.name, username: displayUser.username, verified: user.verified, avatar: displayUser.avatar },
+      timeAgo: { bn: "এখনই", en: "Just now" },
+      text: text.trim(),
+      image,
+      audience,
+      collaborator: collaborator.trim(),
+    });
     close();
   };
 
   return (
     <>
       <div className="flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-sm">
-        <Avatar size={44} tone="user" src={user.avatar} name={user.name} />
+        <Avatar size={44} tone="user" src={displayUser.avatar} name={displayUser.name} />
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -77,9 +104,9 @@ export default function PostComposer({ user }) {
 
             <form onSubmit={handleSubmit}>
               <div className="flex items-center gap-3 px-5 pt-5">
-                <Avatar size={42} tone="user" src={user.avatar} name={user.name} />
+                <Avatar size={42} tone="user" src={displayUser.avatar} name={displayUser.name} />
                 <div className="leading-tight">
-                  <p className="font-semibold">{user.name}</p>
+                  <p className="font-semibold">{displayUser.name}</p>
                   <label className="mt-1 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs text-ink/75">
                     {audience === "public" ? "🌐" : "🔒"}
                     <select

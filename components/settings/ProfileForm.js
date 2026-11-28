@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { currentUser, profiles } from "@/lib/mock-data";
 import { resetVerification, useVerification } from "@/lib/verification";
+import { readPersonalInfo, savePersonalInfo } from "@/lib/personal-info";
+import { saveRegisteredProfile } from "@/lib/registered-profile";
 import { Field, Select, btnMain, inputCls } from "./fields";
 
 const me = profiles[currentUser.username];
@@ -16,10 +18,13 @@ const initial = {
   day: String(Number(d0)),
   month: String(Number(m0)),
   year: y0,
-  gender: "",
+  gender: me.gender ?? "",
   status: me.relationship,
   contact: "",
 };
+const ROLE_KEY = "dateflow.datingRole";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/+$/, "");
+const datingRoles = ["host", "guest", "member"];
 
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 const isBdPhone = (v) => /^(?:\+?88)?01[3-9]\d{8}$/.test(v.replace(/[\s-]/g, ""));
@@ -28,7 +33,7 @@ const validDate = (y, m, d) => {
   return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 };
 // নাম বা জন্ম তারিখ বদলালে আগের ভেরিফিকেশন আর খাটে না
-const identityKey = (v) => `${v.first.trim()} ${v.last.trim()}|${Number(v.day)}/${Number(v.month)}/${v.year}`;
+const identityKey = (v) => `${v.first.trim()} ${v.last.trim()}|${Number(v.day)}/${Number(v.month)}/${v.year}|${v.gender}`;
 
 export default function ProfileForm() {
   const { t, lang } = useLanguage();
@@ -39,10 +44,23 @@ export default function ProfileForm() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [datingRole, setDatingRole] = useState("member");
+
+  useEffect(() => {
+    const saved = readPersonalInfo(initial);
+    let registered = null;
+    try { registered = JSON.parse(localStorage.getItem("dateNexa:userProfile") || "null"); } catch {}
+    const loaded = { ...saved, contact: saved.contact || registered?.email || registered?.phone || "" };
+    setV(loaded);
+    baseline.current = identityKey(loaded);
+    try { setDatingRole(localStorage.getItem(ROLE_KEY) || "member"); } catch {}
+  }, []);
 
   const set = (k) => (e) => {
     setV((s) => ({ ...s, [k]: e.target.value }));
     setNote("");
+    setSubmitError("");
   };
 
   const months = useMemo(() => {
@@ -81,9 +99,29 @@ export default function ProfileForm() {
     }
     setSaving(true);
     try {
-      // TODO: API call করে প্রোফাইল সেভ করুন, যেমন:
-      // await fetch("/api/profile", { method: "PUT", body: JSON.stringify(v) });
-      await new Promise((r) => setTimeout(r, 700));
+      const id = localStorage.getItem("dateNexa:userId");
+      if (!id) throw new Error(t("profile.saveError"));
+      const dob = `${v.year}-${String(v.month).padStart(2, "0")}-${String(v.day).padStart(2, "0")}`;
+      const contact = v.contact.trim();
+      const payload = {
+        firstName: v.first.trim(),
+        lastName: v.last.trim(),
+        dob,
+        gender: v.gender,
+        relationship: v.status,
+        ...(isEmail(contact) ? { email: contact.toLowerCase() } : { phone: contact.replace(/[\s()-]/g, "") }),
+      };
+      const response = await fetch(`${API_URL}/api/profile/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) throw new Error(data.message || t("profile.saveError"));
+
+      savePersonalInfo(v);
+      saveRegisteredProfile(data.user);
+      try { localStorage.setItem(ROLE_KEY, datingRole); } catch {}
       const changed = identityKey(v) !== baseline.current;
       baseline.current = identityKey(v);
       if (verification.status === "verified" && changed) {
@@ -92,6 +130,10 @@ export default function ProfileForm() {
       } else {
         setNote("saved");
       }
+      setSubmitError("");
+    } catch (error) {
+      setSubmitError(error.message || t("profile.saveError"));
+      setNote("error");
     } finally {
       setSaving(false);
     }
@@ -156,6 +198,18 @@ export default function ProfileForm() {
         )}
       </Field>
 
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-semibold">{t("dating.roleTitle")}</legend>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {datingRoles.map((role) => (
+            <label key={role} className={`cursor-pointer rounded-xl border p-3 transition ${datingRole === role ? "border-maroon-700 bg-maroon-50 ring-1 ring-maroon-200" : "border-ink/15 hover:bg-muted"}`}>
+              <span className="flex items-center gap-2 font-semibold"><input type="radio" name="datingRole" value={role} checked={datingRole === role} onChange={() => { setDatingRole(role); try { localStorage.setItem(ROLE_KEY, role); } catch {} }} className="accent-maroon-700" />{t(`dating.role.${role}`)}</span>
+              <span className="mt-2 block text-xs leading-5 text-ink/70">{t(`dating.role.${role}.desc`)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <Field label={t("settings.field.contact")} error={errors.contact}>
         {(p) => (
           <input
@@ -173,6 +227,8 @@ export default function ProfileForm() {
       <button type="submit" disabled={saving} className={`${btnMain} w-full py-3`}>
         {saving ? t("settings.saving") : t("settings.save")}
       </button>
+
+      {submitError && <p role="alert" className="text-sm text-red-600">{submitError}</p>}
 
       <p role="status" aria-live="polite" className="min-h-5 text-sm">
         {note === "saved" && <span className="text-emerald-600">{t("settings.saved")}</span>}

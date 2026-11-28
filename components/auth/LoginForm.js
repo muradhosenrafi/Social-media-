@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { savePersonalInfo } from "@/lib/personal-info";
+import { saveRegisteredProfile } from "@/lib/registered-profile";
 import { EyeIcon, EyeOffIcon, HeartIcon, LockIcon, LogoMark, MailIcon } from "./Icons";
 
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PHONE_RE = /^\+?[0-9]{10,15}$/;
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/+$/, "");
 
 const field =
   "flex h-[60px] items-center gap-3 rounded-2xl border border-[#e6dff0] bg-white px-4 text-[#6b5b95] transition focus-within:border-[#e91e63] focus-within:ring-4 focus-within:ring-[#ffd3e6]";
@@ -43,21 +46,81 @@ export default function LoginForm() {
     const er = validate();
     setErrors(er);
     if (Object.keys(er).length) return;
+    if (!EMAIL_RE.test(form.contact.trim())) {
+      setFormError("Phone login is not connected yet. Please log in with your email.");
+      return;
+    }
 
     setLoading(true);
     setFormError("");
     try {
-      // TODO: API call করে login করুন, যেমন:
-      // const res = await fetch("/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ contact: form.contact.trim(), password: form.password }),
-      // });
-      // if (!res.ok) throw new Error("Invalid credentials");
-      await new Promise((r) => setTimeout(r, 600));
+      const credentials = {
+        email: form.contact.trim().toLowerCase(),
+        password: form.password,
+      };
+      const sendLogin = async (locationData = {}) => {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...credentials, ...locationData }),
+        });
+        return {
+          response,
+          data: await response.json().catch(() => ({})),
+        };
+      };
+
+      let { response: res, data } = await sendLogin();
+
+      if (res.ok && data.requiresGps) {
+        const locationCoordinates = await new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve(null);
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            ({ coords }) =>
+              resolve({
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+              }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+          );
+        });
+
+        ({ response: res, data } = await sendLogin(
+          locationCoordinates
+            ? { locationCoordinates }
+            : { gpsUnavailable: true }
+        ));
+      }
+
+      if (!res.ok) throw new Error(data.message || "Email or password is incorrect.");
+      if (!data.success) throw new Error(data.message || "Email or password is incorrect.");
+      if (data.user?.id) {
+        localStorage.setItem("dateNexa:userId", data.user.id);
+        localStorage.setItem("dateNexa:userName", data.user.username || "");
+        localStorage.setItem(
+          "dateNexa:userLocation",
+          JSON.stringify(data.user.location || null)
+        );
+        saveRegisteredProfile(data.user);
+        const dob = data.user.dob ? new Date(data.user.dob) : null;
+        const validDob = dob && !Number.isNaN(dob.getTime());
+        savePersonalInfo({
+          first: data.user.firstName || "",
+          last: data.user.lastName || "",
+          day: validDob ? String(dob.getUTCDate()) : "",
+          month: validDob ? String(dob.getUTCMonth() + 1) : "",
+          year: validDob ? String(dob.getUTCFullYear()) : "",
+          gender: data.user.gender || "",
+        });
+      }
       router.push("/");
-    } catch {
-      setFormError("Email, number or password is incorrect.");
+    } catch (error) {
+      setFormError(error.message || `Could not connect to the DateNexa backend at ${API_URL}.`);
     } finally {
       setLoading(false);
     }

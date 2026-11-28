@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { HeartIcon, LogoMark, MailIcon } from "./Icons";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/+$/, "");
+
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 const field =
@@ -28,7 +30,7 @@ export default function ForgotPasswordForm() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/forgot-password", {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: value }),

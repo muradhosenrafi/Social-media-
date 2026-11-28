@@ -19,6 +19,12 @@ export default function AgeConsent({ onAccept }) {
       <p className="mt-3 text-[17px] text-[#5b5078]">
         DateNexa is only for adults. Confirm your age to continue.
       </p>
+      <p className="mt-2 text-sm leading-6 text-[#6b5b95]">
+        We use your IP location first. If that cannot identify your area (or
+        Dhaka thana), we will ask permission to send device GPS coordinates to
+        Geoapify to find an approximate division, district and thana. You cannot
+        edit this profile location.
+      </p>
 
       <label
         className={`mt-8 flex cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#ffd3e6] ${

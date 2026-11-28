@@ -18,6 +18,8 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { currentUser } from "@/lib/mock-data";
 import { useTheme } from "@/lib/useTheme";
+import { useRegisteredProfile } from "@/lib/registered-profile";
+import { useVerification } from "@/lib/verification";
 
 const rowCls =
   "flex w-full items-center gap-4 rounded-xl px-3 py-2.5 text-left text-[15px] font-semibold transition hover:bg-surface/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-maroon-200";
@@ -25,6 +27,8 @@ const rowCls =
 export default function AccountMenu({ variant = "navbar" }) {
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const registeredProfile = useRegisteredProfile();
+  const verification = useVerification();
   const router = useRouter();
   const panelId = useId();
   const [open, setOpen] = useState(false);
@@ -34,6 +38,11 @@ export default function AccountMenu({ variant = "navbar" }) {
 
   const close = () => setOpen(false);
   const profileHref = `/profile/${currentUser.username}`;
+  const userName = registeredProfile
+    ? `${registeredProfile.firstName || ""} ${registeredProfile.lastName || ""}`.trim() || currentUser.name
+    : currentUser.name;
+  const userAvatar = registeredProfile?.avatar || registeredProfile?.profileImage || currentUser.avatar;
+  const verified = verification.status === "verified";
 
   useEffect(() => {
     if (!open) return;
@@ -98,7 +107,7 @@ export default function AccountMenu({ variant = "navbar" }) {
             open ? "text-maroon-700" : "text-ink/70"
           }`}
         >
-          <Avatar size={24} tone="user" src={currentUser.avatar} name={currentUser.name} />
+          <Avatar size={24} tone="user" src={userAvatar} name={userName} />
           <span className="max-w-full truncate">{t("nav.menu")}</span>
         </button>
       ) : (
@@ -112,7 +121,7 @@ export default function AccountMenu({ variant = "navbar" }) {
           aria-controls={open ? panelId : undefined}
           className="relative rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-maroon-200"
         >
-          <Avatar size={44} tone="user" src={currentUser.avatar} name={currentUser.name} />
+          <Avatar size={44} tone="user" src={userAvatar} name={userName} />
           <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-surface text-ink ring-1 ring-black/15">
             <ChevronDownIcon className={`h-3 w-3 transition ${open ? "rotate-180" : ""}`} />
           </span>
@@ -128,11 +137,11 @@ export default function AccountMenu({ variant = "navbar" }) {
               onClick={close}
               className="flex items-center gap-3 rounded-xl bg-surface px-3 py-2.5 shadow-sm transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-maroon-200"
             >
-              <Avatar size={44} tone="user" src={currentUser.avatar} name={currentUser.name} />
+              <Avatar size={44} tone="user" src={userAvatar} name={userName} />
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 font-semibold">
-                  <span className="truncate">{currentUser.name}</span>
-                  {currentUser.verified && <VerifiedBadge />}
+                  <span className="truncate">{userName}</span>
+                  {verified && <VerifiedBadge />}
                 </span>
                 <span className="block text-xs text-ink/60">{t("menu.viewProfile")}</span>
               </span>

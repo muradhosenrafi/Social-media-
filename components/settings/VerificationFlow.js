@@ -5,6 +5,7 @@ import { AlertIcon, CheckIcon, CloseIcon, UploadIcon, CameraIcon } from "@/compo
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { currentUser, profiles } from "@/lib/mock-data";
+import { readPersonalInfo } from "@/lib/personal-info";
 import {
   DEMO_MODE,
   isVerified,
@@ -57,12 +58,19 @@ function Check({ ok, children }) {
 export default function VerificationFlow() {
   const { t } = useLanguage();
   const saved = useVerification();
+  const profile = profiles[currentUser.username];
+  const [firstName, ...lastNames] = profile.name.split(" ");
+  const [fallbackDay, fallbackMonth, fallbackYear] = profile.birthday.split("/");
+  const fallbackPersonal = { first: firstName, last: lastNames.join(" "), day: fallbackDay, month: fallbackMonth, year: fallbackYear, gender: profile.gender ?? "" };
   const [nid, setNid] = usePhoto();
   const [face, setFace] = usePhoto();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [demo, setDemo] = useState("match");
+  const [gender, setGender] = useState(fallbackPersonal.gender);
+
+  useEffect(() => { setGender(readPersonalInfo(fallbackPersonal).gender ?? ""); }, []);
 
   const outcome = result ?? (saved.status === "verified" || saved.status === "failed" ? saved : null);
   const ok = isVerified(outcome);
@@ -78,9 +86,19 @@ export default function VerificationFlow() {
     setBusy(true);
     setError("");
     try {
-      const r = await verifyIdentity({ nidFile: nid.file, faceFile: face.file, profile: { name: currentUser.name, birthday: profiles[currentUser.username].birthday }, demoOutcome: demo });
+      const personal = readPersonalInfo(fallbackPersonal);
+      const r = await verifyIdentity({
+        nidFile: nid.file,
+        faceFile: face.file,
+        profile: {
+          name: `${personal.first} ${personal.last}`.trim(),
+          birthday: `${personal.day}/${personal.month}/${personal.year}`,
+          gender: personal.gender,
+        },
+        demoOutcome: demo,
+      });
       setResult(r);
-      saveVerification({ status: isVerified(r) ? "verified" : "failed", nidMatchesProfile: r.nidMatchesProfile === true, faceMatchesNid: r.faceMatchesNid === true, at: Date.now() });
+      saveVerification({ status: isVerified(r) ? "verified" : "failed", nidMatchesProfile: r.nidMatchesProfile === true, faceMatchesNid: r.faceMatchesNid === true, genderMatchesProfile: r.genderMatchesProfile === true, at: Date.now() });
     } catch {
       setError(t("verify.error"));
     } finally { setBusy(false); }
@@ -93,7 +111,7 @@ export default function VerificationFlow() {
     <div className="space-y-5">
       {outcome && <section role="status" className={`rounded-2xl p-5 ring-1 ${ok ? "bg-emerald-600/10 ring-emerald-600/30" : "bg-red-600/10 ring-red-600/30"}`}>
         <p className="flex items-center gap-2 text-sm font-bold">{ok ? <VerifiedBadge size={20} /> : <AlertIcon className="h-5 w-5 text-red-600" />}{ok ? t("verify.result.ok") : t("verify.result.fail")}</p>
-        <ul className="mt-3 space-y-2"><Check ok={outcome.nidMatchesProfile === true}>{t("verify.check.nid")}</Check><Check ok={outcome.faceMatchesNid === true}>{t("verify.check.face")}</Check></ul>
+        <ul className="mt-3 space-y-2"><Check ok={outcome.nidMatchesProfile === true}>{t("verify.check.nid")}</Check><Check ok={outcome.genderMatchesProfile === true}>{t("verify.check.gender")}</Check><Check ok={outcome.faceMatchesNid === true}>{t("verify.check.face")}</Check></ul>
         {ok && <button type="button" onClick={again} className={`${btnSoft} mt-4`}>{t("verify.again")}</button>}
       </section>}
 
@@ -123,6 +141,7 @@ export default function VerificationFlow() {
           <div className="mb-4 divide-y divide-ink/10 border-y border-ink/10 text-sm">
             <div className="flex justify-between py-3"><span>{t("verify.nidTitle")}</span><span className={`font-semibold ${nid ? "text-emerald-700" : "text-ink/55"}`}>{nid ? t("verify.added") : t("verify.notAdded")}</span></div>
             <div className="flex justify-between py-3"><span>{t("verify.faceTitle")}</span><span className={`font-semibold ${face ? "text-emerald-700" : "text-ink/55"}`}>{face ? t("verify.added") : t("verify.notAdded")}</span></div>
+            <div className="flex justify-between py-3"><span>{t("settings.field.gender")}</span><span className="font-semibold">{gender ? t(`settings.gender.${gender}`) : t("verify.notAdded")}</span></div>
           </div>
           {DEMO_MODE && <label className="mb-3 block text-xs font-semibold">{t("verify.demo")}<select value={demo} onChange={(e) => setDemo(e.target.value)} className={`${inputCls} mt-1.5`}><option value="match">{t("verify.demo.match")}</option><option value="mismatch">{t("verify.demo.mismatch")}</option></select><span className="mt-1 block font-normal text-ink/60">{t("verify.demoNote")}</span></label>}
           <button type="button" onClick={submit} disabled={!nid || !face || busy} className={`${btnMain} w-full py-3`}>{busy ? t("verify.checking") : t("verify.submit")}</button>
